@@ -1,6 +1,5 @@
 ﻿using EasyConverter.LibreOffice;
 using System;
-using System.Diagnostics;
 
 namespace EasyConverter.Cli
 {
@@ -8,10 +7,19 @@ namespace EasyConverter.Cli
     {
         static void Main(string[] args)
         {
-            var watch = Stopwatch.StartNew();
-            Converter.Convert(@"D:\introduction-to-github.pptx", FileType.Pdf, @"D:\out");
-            watch.Stop();
-            Console.WriteLine($"Done: {watch.ElapsedMilliseconds:N0} ms");
+            var result = Converter.Convert(@"D:\introduction-to-github.pptx", "pdf", @"D:\out");
+            if (result.TimedOut)
+            {
+                Console.WriteLine($"Timed out after: {result.Time.TotalMilliseconds:N0} ms.");
+            }
+            else if (!result.Successful)
+            {
+                Console.WriteLine($"Unable to convert file: {result.Output}. Took {result.Time.TotalMilliseconds:N0} ms.");
+            }
+            else
+            {
+                Console.WriteLine($"Conversion successful: {result.OutputFile}. Took {result.Time.TotalMilliseconds:N0} ms.");
+            }
         }
     }
 }

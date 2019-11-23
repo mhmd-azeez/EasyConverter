@@ -3,21 +3,83 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace EasyConverter.LibreOffice
 {
+    public class LibreOfficeException : Exception
+    {
+        public int ExitCode { get; }
+        public bool TerminatedPrematurely { get; }
+        public LibreOfficeException(int exitCode = 0, bool terminated = false)
+        {
+            ExitCode = exitCode;
+            TerminatedPrematurely = terminated;
+        }
+
+        public LibreOfficeException(string message, int exitCode = 0, bool terminated = false) : base(message)
+        {
+            ExitCode = exitCode;
+            TerminatedPrematurely = terminated;
+        }
+
+        public LibreOfficeException(string message, Exception innerException, int exitCode = 0, bool terminated = false) : base(message, innerException)
+        {
+            ExitCode = exitCode;
+            TerminatedPrematurely = terminated;
+        }
+    }
+
+    public class ConversionResult
+    {
+        public static ConversionResult CreateTimedOut(string output, TimeSpan time)
+        {
+            return new ConversionResult(false, null, -1, true, output, time);
+        }
+
+        public static ConversionResult CreateSucessful(string outputFile, string output, TimeSpan time)
+        {
+            return new ConversionResult(true, outputFile, 0, false, output, time);
+        }
+
+        public static ConversionResult CreateError(int exitCode, string output, TimeSpan time)
+        {
+            return new ConversionResult(false, null, exitCode, false, output, time);
+        }
+
+        public ConversionResult(bool suceeded, string outputFile, int exitCode, bool timedOut, string output, TimeSpan time)
+        {
+            Successful = suceeded;
+            OutputFile = outputFile;
+            ExitCode = exitCode;
+            Output = output;
+            TimedOut = timedOut;
+            Time = time;
+        }
+
+        public bool Successful { get; }
+        public string OutputFile { get; }
+        public int ExitCode { get; }
+        public string Output { get; }
+        public bool TimedOut { get; }
+
+        public TimeSpan Time { get; set; }
+    }
+
     public static class Converter
     {
-        private static object _extensions;
+        private const int TimeOut = 25 * 1000;
 
-        public static void Convert(
+        public static ConversionResult Convert(
             string inputFile,
-            FileType outputType,
+            string ouputExtension,
             string outputFolder
             )
         {
+            var timer = Stopwatch.StartNew();
+
             var guid = Guid.NewGuid();
-            var convertToParam = $"--convert-to {GetWriterName(outputType)}";
+            var convertToParam = $"--convert-to {ouputExtension}";
             var outputFolderParam = $"--outdir {WrapInQuotes(outputFolder)}";
             var userInstallationFolder = Path.Combine(Path.GetTempPath(), guid.ToString("N"));
             var userInstallationParam = $"file:///{userInstallationFolder.Replace('\\', '/')}";
@@ -25,35 +87,54 @@ namespace EasyConverter.LibreOffice
             var silentParams = "--headless --nofirststartwizard";
 
             var process = new Process();
+            var builder = new StringBuilder();
 
-            process.StartInfo.FileName = Path.Combine(GetInstallationPath(), "soffice.bin");
-            process.StartInfo.Arguments = $"{convertToParam} {outputFolderParam} {WrapInQuotes(inputFile)} {envParam} {silentParams}";
+            try
+            {
+                process.StartInfo.FileName = GetExePath();
+                process.StartInfo.Arguments = $"{convertToParam} {outputFolderParam} {WrapInQuotes(inputFile)} {envParam} {silentParams}";
 
-            process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.LoadUserProfile = false;
-            process.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
-            process.StartInfo.ErrorDialog = false;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.UseShellExecute = false;
+                process.EnableRaisingEvents = false;
+                process.OutputDataReceived += (sender, eventArgs) => builder.AppendLine(eventArgs.Data);
+                process.ErrorDataReceived += (sender, eventArgs) => builder.AppendLine(eventArgs.Data);
 
-            Directory.CreateDirectory(userInstallationFolder);
-            Directory.CreateDirectory(outputFolder);
+                Directory.CreateDirectory(userInstallationFolder);
+                Directory.CreateDirectory(outputFolder);
 
-            process.Start();
-            process.WaitForExit(25_000);
+                timer.Start();
 
-            // Kill the process if it hasn't finished in the specified time
-            process.Kill();
-            process.Dispose();
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                var processExited = process.WaitForExit(TimeOut);
 
-            var fileName = inputFile
-                .Split('/', '\\')
-                .Last()
-                .Split('.')
-                .First();
+                if (!processExited)
+                {
+                    timer.Stop();
+                    // Kill the process if it hasn't finished in the specified time
+                    process.Kill();
+                    return ConversionResult.CreateTimedOut(builder.ToString(), timer.Elapsed);
+                }
+                else if (process.ExitCode != 0)
+                {
+                    timer.Stop();
+                    return ConversionResult.CreateError(process.ExitCode, builder.ToString(), timer.Elapsed);
+                }
+            }
+            finally
+            {
+                Directory.Delete(userInstallationFolder, true);
+                process.Close();
+            }
 
-            //var outputExtension = _extensions[outputType];
-
-            Directory.Delete(userInstallationFolder, true);
+            var output = builder.ToString();
+            timer.Stop();
+            return ConversionResult.CreateSucessful(GetFileNameFromOutput(output), output, timer.Elapsed);
         }
 
         private static void WriteDataToConsole(object sender, DataReceivedEventArgs e)
@@ -72,37 +153,23 @@ namespace EasyConverter.LibreOffice
             return text;
         }
 
-        private static string GetWriterName(FileType fileType)
+        private static string GetFileNameFromOutput(string output)
         {
-            switch (fileType)
-            {
-                case FileType.Pdf:
-                    return "pdf";
+            // sample output:
+            // {convert D:\file.pptx -> D:\out\file.pdf using filter : impress_pdf_Export
+            // Overwriting: D:\out\file.pdf
+            // }
+            var arrowIndex = output.IndexOf("->") + 2; // the + 2 is to take the arrow into account also
+            var usingFilterIndex = output.IndexOf("using filter", arrowIndex);
 
-                case FileType.Word2007:
-                    break;
-                case FileType.Word2003:
-                    break;
-                case FileType.PowerPoint2007:
-                    break;
-                case FileType.PowerPoint2003:
-                    break;
-                case FileType.Excel2007:
-                    break;
-                case FileType.Excel2003:
-                    break;
-                default:
-                    break;
-            }
-
-            throw new ArgumentOutOfRangeException(nameof(fileType));
+            return output.Substring(arrowIndex, usingFilterIndex - arrowIndex).Trim();
         }
 
-        private static string GetInstallationPath()
+        private static string GetExePath()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return @"C:\Program Files\LibreOffice\program";
+                return @"C:\Program Files\LibreOffice\program\soffice.exe";
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
