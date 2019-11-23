@@ -9,7 +9,7 @@ namespace EasyConverter.Cli
         static void Main(string[] args)
         {
             var watch = Stopwatch.StartNew();
-            Converter.Convert(@"D:\in\2.docx", FileType.Pdf, @"D:\out");
+            Converter.Convert(@"D:\introduction-to-github.pptx", FileType.Pdf, @"D:\out");
             watch.Stop();
             Console.WriteLine($"Done: {watch.ElapsedMilliseconds:N0} ms");
         }

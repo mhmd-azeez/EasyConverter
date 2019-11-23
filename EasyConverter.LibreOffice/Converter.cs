@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace EasyConverter.LibreOffice
 {
     public static class Converter
     {
+        private static object _extensions;
+
         public static void Convert(
             string inputFile,
             FileType outputType,
@@ -24,7 +27,7 @@ namespace EasyConverter.LibreOffice
             var process = new Process();
 
             process.StartInfo.FileName = Path.Combine(GetInstallationPath(), "soffice.bin");
-            process.StartInfo.Arguments = $"{convertToParam} {outputFolderParam} {inputFile} {envParam} {silentParams}";
+            process.StartInfo.Arguments = $"{convertToParam} {outputFolderParam} {WrapInQuotes(inputFile)} {envParam} {silentParams}";
 
             process.StartInfo.CreateNoWindow = true;
             process.StartInfo.UseShellExecute = false;
@@ -41,6 +44,14 @@ namespace EasyConverter.LibreOffice
             // Kill the process if it hasn't finished in the specified time
             process.Kill();
             process.Dispose();
+
+            var fileName = inputFile
+                .Split('/', '\\')
+                .Last()
+                .Split('.')
+                .First();
+
+            //var outputExtension = _extensions[outputType];
 
             Directory.Delete(userInstallationFolder, true);
         }
@@ -66,7 +77,7 @@ namespace EasyConverter.LibreOffice
             switch (fileType)
             {
                 case FileType.Pdf:
-                    return "pdf:writer_pdf_Export";
+                    return "pdf";
 
                 case FileType.Word2007:
                     break;
@@ -96,6 +107,10 @@ namespace EasyConverter.LibreOffice
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 return @"/usr/bin/soffice";
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return @"/Applications/LibreOffice.app/Contents/MacOS/soffice";
             }
             else
             {
