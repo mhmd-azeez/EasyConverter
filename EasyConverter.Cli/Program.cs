@@ -7,7 +7,7 @@ namespace EasyConverter.Cli
     {
         static void Main(string[] args)
         {
-            var result = Converter.Convert(@"D:\introduction-to-github.pptx", "pdf", @"D:\out");
+            var result = Converter.Convert(@"F:\tusfiles\b7ef9bb526bc49078339331e2e26fa9b", "docx", @"D:\out");
             if (result.TimedOut)
             {
                 Console.WriteLine($"Timed out after: {result.Time.TotalMilliseconds:N0} ms.");

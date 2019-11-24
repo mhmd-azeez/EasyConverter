@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using EasyConverter.WebUI.Notifications;
+using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -27,11 +31,12 @@ namespace EasyConverter.WebUI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMediatR(typeof(Startup).Assembly);
             services.AddRazorPages();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider services)
         {
             if (env.IsDevelopment())
             {
@@ -51,20 +56,40 @@ namespace EasyConverter.WebUI
 
             app.UseAuthorization();
 
+            var mediator = services.GetService<IMediator>();
+
             app.UseTus(context =>
             {
                 return new DefaultTusConfiguration
                 {
                     UrlPath = "/files",
-                    Store = new TusDiskStore(@"C:\tusfiles\"),
+                    Store = new TusDiskStore(@"F:\tusfiles\"),
                     Events = new Events
                     {
-                        OnCreateCompleteAsync = ctx =>
+                        OnFileCompleteAsync = async ctx =>
                         {
-                            logger.LogInformation($"Created file {ctx.FileId} using {ctx.Store.GetType().FullName}");
-                            return Task.CompletedTask;
-                        },
+                            var file = await ctx.GetFileAsync();
+                            var metaData = await file.GetMetadataAsync(default);
 
+                            var fileName = metaData["fileName"].GetString(System.Text.Encoding.UTF8);
+                            var convertTo = metaData["convertTo"].GetString(System.Text.Encoding.UTF8);
+
+                            var id = ctx.FileId;
+
+                            var fullPath = @"F:\tusfiles\" + id;
+                            var moveTo = $@"F:\intermediate\{fileName}";
+                            File.Copy(fullPath, moveTo, true);
+
+                            var result = LibreOffice.Converter.Convert(moveTo, convertTo, @"F:\out");
+
+                            if (result.Successful)
+                            {
+                                using (var stream = File.OpenRead(result.OutputFile))
+                                {
+                                    await ctx.Store.AppendDataAsync(Guid.NewGuid().ToString("N0"), stream, default);
+                                }
+                            }
+                        },
                     }
                 };
             });

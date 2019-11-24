@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "provider": "jsdelivr",
+      "library": "tus-js-client@1.8.0",
+      "destination": "wwwroot/lib/tus-js-client/",
+      "files": [
+        "dist/tus.js",
+        "dist/tus.js.map",
+        "dist/tus.min.js",
+        "dist/tus.min.js.map"
+      ]
+    }
+  ]
+}

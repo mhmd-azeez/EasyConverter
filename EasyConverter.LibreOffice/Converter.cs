@@ -68,7 +68,7 @@ namespace EasyConverter.LibreOffice
 
     public static class Converter
     {
-        private const int TimeOut = 25 * 1000;
+        private const int TimeOut = 60 * 1000;
 
         public static ConversionResult Convert(
             string inputFile,
@@ -80,19 +80,21 @@ namespace EasyConverter.LibreOffice
 
             var guid = Guid.NewGuid();
             var convertToParam = $"--convert-to {ouputExtension}";
-            var outputFolderParam = $"--outdir {WrapInQuotes(outputFolder)}";
+            var outputFolderParam = $"--outdir {WrapInQuotes(UnifySlashes(outputFolder))}";
             var userInstallationFolder = Path.Combine(Path.GetTempPath(), guid.ToString("N"));
             var userInstallationParam = $"file:///{userInstallationFolder.Replace('\\', '/')}";
-            var envParam = WrapInQuotes($"-env:UserInstallation={userInstallationParam}");
+            var envParam = WrapInQuotes($"-env:UserInstallation={UnifySlashes(userInstallationParam)}");
             var silentParams = "--headless --nofirststartwizard";
+            var inputFileParam = WrapInQuotes(UnifySlashes(inputFile));
 
             var process = new Process();
             var builder = new StringBuilder();
+            string output;
 
             try
             {
                 process.StartInfo.FileName = GetExePath();
-                process.StartInfo.Arguments = $"{convertToParam} {outputFolderParam} {WrapInQuotes(inputFile)} {envParam} {silentParams}";
+                process.StartInfo.Arguments = $"{convertToParam} {outputFolderParam} {inputFileParam} {envParam} {silentParams}";
 
                 process.StartInfo.RedirectStandardError = true;
                 process.StartInfo.RedirectStandardOutput = true;
@@ -112,6 +114,7 @@ namespace EasyConverter.LibreOffice
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 var processExited = process.WaitForExit(TimeOut);
+                output = builder.ToString();
 
                 if (!processExited)
                 {
@@ -120,7 +123,7 @@ namespace EasyConverter.LibreOffice
                     process.Kill();
                     return ConversionResult.CreateTimedOut(builder.ToString(), timer.Elapsed);
                 }
-                else if (process.ExitCode != 0)
+                else if (process.ExitCode != 0 || output.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     timer.Stop();
                     return ConversionResult.CreateError(process.ExitCode, builder.ToString(), timer.Elapsed);
@@ -132,7 +135,6 @@ namespace EasyConverter.LibreOffice
                 process.Close();
             }
 
-            var output = builder.ToString();
             timer.Stop();
             return ConversionResult.CreateSucessful(GetFileNameFromOutput(output), output, timer.Elapsed);
         }
@@ -140,6 +142,11 @@ namespace EasyConverter.LibreOffice
         private static void WriteDataToConsole(object sender, DataReceivedEventArgs e)
         {
             Console.WriteLine(e.Data);
+        }
+
+        private static string UnifySlashes(string text)
+        {
+            return text.Replace('\\', '/');
         }
 
         private static string WrapInQuotes(string text)
