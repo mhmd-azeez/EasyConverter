@@ -71,7 +71,7 @@ namespace EasyConverter.WebUI
                             var file = await ctx.GetFileAsync();
                             var metaData = await file.GetMetadataAsync(default);
 
-                            var fileName = metaData["fileName"].GetString(System.Text.Encoding.UTF8);
+                            var fileName = metaData["name"].GetString(System.Text.Encoding.UTF8);
                             var convertTo = metaData["convertTo"].GetString(System.Text.Encoding.UTF8);
 
                             var id = ctx.FileId;

@@ -4,42 +4,72 @@
     ViewData["Title"] = "Home page";
 }
 
+@section Head {
+    <link href="https://transloadit.edgly.net/releases/uppy/v1.6.0/uppy.min.css" rel="stylesheet">
+}
+
 <h2>Upload something here</h2>
 
-<input id="file" type="file" />
+<div id="drag-drop-area"></div>
+
+<div id="progress-bar-area"></div>
+
+<button id="upload-button">Upload</button>
 
 @section Scripts
 {
-    <script async src="~/lib/tus-js-client/dist/tus.min.js"></script>
-    <script type="text/javascript">
-        let input = document.getElementById("file");
+    <script src="https://transloadit.edgly.net/releases/uppy/v1.6.0/uppy.min.js"></script>
+    @*<script async src="~/lib/tus-js-client/dist/tus.min.js"></script>*@
 
-        input.addEventListener("change", function (e) {
-            // Get the selected file from the input element
-            var file = e.target.files[0]
+    <script>
+        const setFilesMetaData = (files) => {
 
-            // Create a new tus upload
-            var upload = new tus.Upload(file, {
-                endpoint: "/files",
-                retryDelays: [0, 3000, 5000, 10000, 20000],
-                metadata: {
-                    fileName: file.name,
-                    convertTo: "pdf"
-                },
-                onError: function (error) {
-                    console.log("Failed because: " + error)
-                },
-                onProgress: function (bytesUploaded, bytesTotal) {
-                    var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2)
-                    console.log(bytesUploaded, bytesTotal, percentage + "%")
-                },
-                onSuccess: function () {
-                    console.log("Download %s from %s", upload.file.name, upload.url)
-                }
-            })
+            let keys = Object.keys(files);
 
-            // Start the upload
-            upload.start()
-        })
+            keys.forEach((key) => {
+                let file = files[key];
+                file.meta["convertTo"] = "pdf";
+            });
+
+            console.log(files);
+        };
+
+        var uppy = Uppy.Core({ debug: true, autoProceed: true, onBeforeUpload: setFilesMetaData });
+        uppy.use(Uppy.DragDrop, { target: '#drag-drop-area' });
+        uppy.use(Uppy.Tus, { endpoint: '/files/' });
+        uppy.use(Uppy.ProgressBar, { target: '#progress-bar-area', hideAfterFinish: false });
+
     </script>
+
+    @*<script type="text/javascript">
+            let input = document.getElementById("file");
+
+            input.addEventListener("change", function (e) {
+                // Get the selected file from the input element
+                var file = e.target.files[0]
+
+                // Create a new tus upload
+                var upload = new tus.Upload(file, {
+                    endpoint: "/files",
+                    retryDelays: [0, 3000, 5000, 10000, 20000],
+                    metadata: {
+                        fileName: file.name,
+                        convertTo: "pdf"
+                    },
+                    onError: function (error) {
+                        console.log("Failed because: " + error)
+                    },
+                    onProgress: function (bytesUploaded, bytesTotal) {
+                        var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2)
+                        console.log(bytesUploaded, bytesTotal, percentage + "%")
+                    },
+                    onSuccess: function () {
+                        console.log("Download %s from %s", upload.file.name, upload.url)
+                    }
+                })
+
+                // Start the upload
+                upload.start()
+            })
+        </script>*@
 }
