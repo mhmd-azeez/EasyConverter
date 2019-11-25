@@ -3,15 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29324.140
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConverter.WebUI", "EasyConverter.WebUI\EasyConverter.WebUI.csproj", "{FF90A7A0-25CB-4BB4-926A-73BBE926EE34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasyConverter.WebUI", "EasyConverter.WebUI\EasyConverter.WebUI.csproj", "{FF90A7A0-25CB-4BB4-926A-73BBE926EE34}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UI", "UI", "{B3D93A74-4F29-4E5A-B099-7002033EA8F3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{E522DF4C-9AD9-4359-88D4-FAF1D2DAFB09}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConverter.LibreOffice", "EasyConverter.LibreOffice\EasyConverter.LibreOffice.csproj", "{144139D0-ACB4-4DCE-AFC4-5EC9AFE98BAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasyConverter.LibreOffice", "EasyConverter.LibreOffice\EasyConverter.LibreOffice.csproj", "{144139D0-ACB4-4DCE-AFC4-5EC9AFE98BAE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConverter.Cli", "EasyConverter.Cli\EasyConverter.Cli.csproj", "{DEDD4D5D-5B37-48AE-A989-F7B17DE9F263}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasyConverter.Cli", "EasyConverter.Cli\EasyConverter.Cli.csproj", "{DEDD4D5D-5B37-48AE-A989-F7B17DE9F263}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConverter.Shared", "EasyConverter.Shared\EasyConverter.Shared.csproj", "{2C88C047-B00B-4BCD-9CEC-AAD03023EC2F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bots", "Bots", "{EC17F9CC-B54C-43BB-A509-70B29D19199C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConverter.DocumentBot", "EasyConverter.DocumentBot\EasyConverter.DocumentBot.csproj", "{B046B59D-8F0D-4037-A401-87D4C9764BF2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +37,14 @@ Global
 		{DEDD4D5D-5B37-48AE-A989-F7B17DE9F263}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DEDD4D5D-5B37-48AE-A989-F7B17DE9F263}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DEDD4D5D-5B37-48AE-A989-F7B17DE9F263}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C88C047-B00B-4BCD-9CEC-AAD03023EC2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C88C047-B00B-4BCD-9CEC-AAD03023EC2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C88C047-B00B-4BCD-9CEC-AAD03023EC2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C88C047-B00B-4BCD-9CEC-AAD03023EC2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B046B59D-8F0D-4037-A401-87D4C9764BF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B046B59D-8F0D-4037-A401-87D4C9764BF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B046B59D-8F0D-4037-A401-87D4C9764BF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B046B59D-8F0D-4037-A401-87D4C9764BF2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -39,6 +53,8 @@ Global
 		{FF90A7A0-25CB-4BB4-926A-73BBE926EE34} = {B3D93A74-4F29-4E5A-B099-7002033EA8F3}
 		{144139D0-ACB4-4DCE-AFC4-5EC9AFE98BAE} = {E522DF4C-9AD9-4359-88D4-FAF1D2DAFB09}
 		{DEDD4D5D-5B37-48AE-A989-F7B17DE9F263} = {B3D93A74-4F29-4E5A-B099-7002033EA8F3}
+		{2C88C047-B00B-4BCD-9CEC-AAD03023EC2F} = {E522DF4C-9AD9-4359-88D4-FAF1D2DAFB09}
+		{B046B59D-8F0D-4037-A401-87D4C9764BF2} = {EC17F9CC-B54C-43BB-A509-70B29D19199C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1722CB90-AAC2-45F0-83F3-90A6C3E1BF1A}

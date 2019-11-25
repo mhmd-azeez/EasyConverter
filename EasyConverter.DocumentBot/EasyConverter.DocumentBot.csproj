@@ -1,18 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <UserSecretsId>dotnet-EasyConverter.DocumentBot-13174E04-A847-4ECB-BD48-ADC03F1358B3</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
     <PackageReference Include="RabbitMQ.Client" Version="5.1.2" />
-    <PackageReference Include="tusdotnet" Version="2.2.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EasyConverter.LibreOffice\EasyConverter.LibreOffice.csproj" />
     <ProjectReference Include="..\EasyConverter.Shared\EasyConverter.Shared.csproj" />
   </ItemGroup>
-
 </Project>

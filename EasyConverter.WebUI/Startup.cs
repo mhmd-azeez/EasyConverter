@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EasyConverter.Shared;
 using EasyConverter.WebUI.Notifications;
+using EasyConverter.WebUI.Services;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -32,6 +34,7 @@ namespace EasyConverter.WebUI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMediatR(typeof(Startup).Assembly);
+            services.AddSingleton<MessageQueueService>();
             services.AddRazorPages();
         }
 
@@ -57,13 +60,14 @@ namespace EasyConverter.WebUI
             app.UseAuthorization();
 
             var mediator = services.GetService<IMediator>();
+            var messageQueue = services.GetService<MessageQueueService>();
 
             app.UseTus(context =>
             {
                 return new DefaultTusConfiguration
                 {
                     UrlPath = "/files",
-                    Store = new TusDiskStore(@"F:\tusfiles\"),
+                    Store = new TusDiskStore(@"F:\converter\tus"),
                     Events = new Events
                     {
                         OnFileCompleteAsync = async ctx =>
@@ -76,20 +80,31 @@ namespace EasyConverter.WebUI
 
                             var id = ctx.FileId;
 
-                            var fullPath = @"F:\tusfiles\" + id;
-                            var moveTo = $@"F:\intermediate\{fileName}";
-                            File.Copy(fullPath, moveTo, true);
-
-                            var result = LibreOffice.Converter.Convert(moveTo, convertTo, @"F:\out");
-
-                            if (result.Successful)
+                            var job = new ConvertDocumentJob
                             {
-                                using (var stream = File.OpenRead(result.OutputFile))
-                                {
-                                    await ctx.Store.AppendDataAsync(Guid.NewGuid().ToString("N0"), stream, default);
-                                }
-                            }
-                        },
+                                FileId = ctx.FileId,
+                                DesiredExtension = convertTo,
+                                Name = $"Convert {file.Id} ({fileName}) to {convertTo}",
+                                OriginalExtension = fileName.Split('.').Last(),
+                            };
+
+                            messageQueue.QueueJob(job);
+
+                            //    var fullPath = @"F:\tusfiles\" + id;
+                            //    var moveTo = $@"F:\intermediate\{fileName}";
+                            //    File.Copy(fullPath, moveTo, true);
+
+                            //    var result = LibreOffice.Converter.Convert(moveTo, convertTo, @"F:\out");
+
+                            //    if (result.Successful)
+                            //    {
+                            //        using (var stream = File.OpenRead(result.OutputFile))
+                            //        {
+                            //            await ctx.Store.AppendDataAsync(Guid.NewGuid().ToString("N0"), stream, default);
+                            //        }  
+                            //    }
+                            //},
+                        }
                     }
                 };
             });
