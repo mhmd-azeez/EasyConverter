@@ -44,7 +44,7 @@ namespace EasyConverter.DocumentBot
                     var job = Serializer.Deserialize<ConvertDocumentJob>(body);
 
 
-                    rocessJob(job);
+                    ProcessJob(job);
 
                     channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
                 };
