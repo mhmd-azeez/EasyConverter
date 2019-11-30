@@ -1,12 +1,8 @@
-﻿using EasyConverter.Shared;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace EasyConverter.WebUI.Services
+namespace EasyConverter.Shared
 {
     public class MessageQueueService
     {
@@ -23,7 +19,7 @@ namespace EasyConverter.WebUI.Services
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                var queueName = Shared.Constants.QueueNames.ConvertDocument;
+                var queueName = Enum.GetName(typeof(JobType), job.Type);
                 channel.QueueDeclare(queue: queueName,
                                      durable: true,
                                      exclusive: false,

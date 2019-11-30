@@ -1,18 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using EasyConverter.Shared;
-using EasyConverter.WebUI.Notifications;
-using EasyConverter.WebUI.Services;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using tusdotnet;
 using tusdotnet.Models;
@@ -62,6 +56,12 @@ namespace EasyConverter.WebUI
             var mediator = services.GetService<IMediator>();
             var messageQueue = services.GetService<MessageQueueService>();
 
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(@"F:\converter\result"),
+                RequestPath = "/result",
+            });
+
             app.UseTus(context =>
             {
                 return new DefaultTusConfiguration
@@ -85,25 +85,10 @@ namespace EasyConverter.WebUI
                                 FileId = ctx.FileId,
                                 DesiredExtension = convertTo,
                                 Name = $"Convert {file.Id} ({fileName}) to {convertTo}",
-                                OriginalExtension = fileName.Split('.').Last(),
+                                OriginalExtension = fileName.Split('.').Last()
                             };
 
                             messageQueue.QueueJob(job);
-
-                            //    var fullPath = @"F:\tusfiles\" + id;
-                            //    var moveTo = $@"F:\intermediate\{fileName}";
-                            //    File.Copy(fullPath, moveTo, true);
-
-                            //    var result = LibreOffice.Converter.Convert(moveTo, convertTo, @"F:\out");
-
-                            //    if (result.Successful)
-                            //    {
-                            //        using (var stream = File.OpenRead(result.OutputFile))
-                            //        {
-                            //            await ctx.Store.AppendDataAsync(Guid.NewGuid().ToString("N0"), stream, default);
-                            //        }  
-                            //    }
-                            //},
                         }
                     }
                 };

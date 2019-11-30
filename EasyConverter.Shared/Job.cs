@@ -4,12 +4,12 @@
     {
         Unknown = 0,
         ConvertDocument = 1,
+        NotifyUser = 2,
     }
 
     public interface IJob
     {
         public string Name { get; }
-        public string FileId { get; }
         public JobType Type { get; }
     }
 
@@ -20,5 +20,14 @@
         public string OriginalExtension { get; set; }
         public string DesiredExtension { get; set; }
         public JobType Type => JobType.ConvertDocument;
+    }
+
+    public class NotifyUserJob : IJob
+    {
+        public bool IsSuccessful { get; set; }
+        public string FileName { get; set; }
+        public string Name => $"Notify User File '{FileName}' is successfuly converted.";
+
+        public JobType Type => JobType.NotifyUser;
     }
 }

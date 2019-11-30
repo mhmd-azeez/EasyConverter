@@ -1,8 +1,11 @@
-using EasyConverter.Shared;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace EasyConverter.DocumentBot
+namespace EasyConverter.NotifyBot
 {
     public class Program
     {
@@ -15,7 +18,6 @@ namespace EasyConverter.DocumentBot
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddSingleton<MessageQueueService>();
                     services.AddHostedService<Worker>();
                 });
     }
