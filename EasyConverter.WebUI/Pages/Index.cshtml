@@ -28,48 +28,39 @@
 
             keys.forEach((key) => {
                 let file = files[key];
-                file.meta["convertTo"] = "pdf";
+                file.meta["convert-to"] = "pdf";
             });
 
             console.log(files);
         };
 
-        var uppy = Uppy.Core({ debug: true, autoProceed: true, onBeforeUpload: setFilesMetaData });
+        var uppy = Uppy.Core(
+            {
+                debug: true,
+                autoProceed: true,
+                onBeforeUpload: setFilesMetaData,
+                restrictions: {
+                    maxFileSize: 300000,
+                    maxNumberOfFiles: 5,
+                    minNumberOfFiles: 2,
+                    allowedFileTypes: [
+                        'application/pdf', // .pdf
+                        'application/msword', // .doc
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+                        'application/vnd.ms-excel', // .xls
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+                        'application/vnd.ms-powerpoint', // .ppt
+                        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
+                        'application/vnd.oasis.opendocument.text', // .odt
+                        'application/vnd.oasis.opendocument.spreadsheet', // .ods
+                        'application/vnd.oasis.opendocument.presentation' // .odp
+                    ]
+                },
+            });
         uppy.use(Uppy.DragDrop, { target: '#drag-drop-area' });
         uppy.use(Uppy.Tus, { endpoint: '/files/' });
         uppy.use(Uppy.ProgressBar, { target: '#progress-bar-area', hideAfterFinish: false });
 
     </script>
 
-    @*<script type="text/javascript">
-            let input = document.getElementById("file");
-
-            input.addEventListener("change", function (e) {
-                // Get the selected file from the input element
-                var file = e.target.files[0]
-
-                // Create a new tus upload
-                var upload = new tus.Upload(file, {
-                    endpoint: "/files",
-                    retryDelays: [0, 3000, 5000, 10000, 20000],
-                    metadata: {
-                        fileName: file.name,
-                        convertTo: "pdf"
-                    },
-                    onError: function (error) {
-                        console.log("Failed because: " + error)
-                    },
-                    onProgress: function (bytesUploaded, bytesTotal) {
-                        var percentage = (bytesUploaded / bytesTotal * 100).toFixed(2)
-                        console.log(bytesUploaded, bytesTotal, percentage + "%")
-                    },
-                    onSuccess: function () {
-                        console.log("Download %s from %s", upload.file.name, upload.url)
-                    }
-                })
-
-                // Start the upload
-                upload.start()
-            })
-        </script>*@
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EasyConverter.Shared;
+using EasyConverter.Shared.Storage;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -16,13 +17,13 @@ namespace EasyConverter.NotifyBot
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        private readonly IHostingEnvironment _environment;
-        private readonly string _baseAddress = "https://localhost:5001/result/";
+        private readonly IStorageProvider _storageProvider;
 
-        public Worker(ILogger<Worker> logger, IHostingEnvironment environment)
+        public Worker(ILogger<Worker> logger, IStorageProvider provider)
         {
             _logger = logger;
-            _environment = environment;
+            _storageProvider = provider;
+            _logger.LogInformation("Notify Bot, Up and running...");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -70,6 +71,9 @@ namespace EasyConverter.NotifyBot
 
         private async Task<bool> ProcessJob(NotifyUserJob job)
         {
+            var link = await _storageProvider.GetPresignedDownloadLink(
+                Shared.Constants.Buckets.Result, job.FileId, TimeSpan.FromHours(24));
+
             var key = Environment.GetEnvironmentVariable("SENDGRID_API_KEY", EnvironmentVariableTarget.User);
             var client = new SendGridClient(key);
 
@@ -80,11 +84,10 @@ namespace EasyConverter.NotifyBot
             message.SetTemplateId("d-aad5b0e03ad94172804fbf77fb301d3b");
             message.SetTemplateData(new
             {
-                DownloadLink = _baseAddress + job.FileName
+                DownloadLink = link
             });
 
             var response = await client.SendEmailAsync(message);
-
 
             if (response.StatusCode != System.Net.HttpStatusCode.Accepted)
             {

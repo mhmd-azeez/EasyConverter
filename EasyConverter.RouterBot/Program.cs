@@ -7,7 +7,7 @@ using EasyConverter.Shared.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace EasyConverter.NotifyBot
+namespace EasyConverter.RouterBot
 {
     public class Program
     {

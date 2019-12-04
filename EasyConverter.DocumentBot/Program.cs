@@ -1,4 +1,5 @@
 using EasyConverter.Shared;
+using EasyConverter.Shared.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -16,6 +17,7 @@ namespace EasyConverter.DocumentBot
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddSingleton<MessageQueueService>();
+                    services.AddSingleton<IStorageProvider>(p => MinioStorageProviderFactory.Create());
                     services.AddHostedService<Worker>();
                 });
     }

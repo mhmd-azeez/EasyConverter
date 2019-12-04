@@ -1,10 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using EasyConverter.LibreOffice;
 using EasyConverter.Shared;
+using EasyConverter.Shared.Storage;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -16,15 +16,20 @@ namespace EasyConverter.DocumentBot
     {
         private readonly ILogger<Worker> _logger;
         private readonly MessageQueueService _messageQueue;
-        private readonly string _tusFolder = @"F:\converter\tus";
-        private readonly string _workFolder = @$"F:\converter\work";
-        private readonly string _outputFolder = $@"F:\converter\out";
-        private readonly string _resultFolder = $@"F:\converter\result";
+        private readonly IStorageProvider _provider;
 
-        public Worker(ILogger<Worker> logger, MessageQueueService messageQueue)
+        private readonly string _workFolder = @$"F:\converter\work";
+        private readonly string _outputFolder = $@"F:\converter\work\out";
+
+        public Worker(
+            ILogger<Worker> logger,
+            MessageQueueService messageQueue,
+            IStorageProvider provider)
         {
             _logger = logger;
             _messageQueue = messageQueue;
+            _provider = provider;
+            _logger.LogInformation("Document Bot, Up and running...");
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -59,14 +64,15 @@ namespace EasyConverter.DocumentBot
                     var body = args.Body;
                     var job = Serializer.Deserialize<ConvertDocumentJob>(body);
 
-                    await ProcessJob(job);
-
-                    channel.BasicAck(deliveryTag: args.DeliveryTag, multiple: false);
+                    if (await ProcessJob(job))
+                    {
+                        channel.BasicAck(deliveryTag: args.DeliveryTag, multiple: false);
+                    }
                 }
             }
         }
 
-        private async Task ProcessJob(ConvertDocumentJob job)
+        private async Task<bool> ProcessJob(ConvertDocumentJob job)
         {
             try
             {
@@ -78,24 +84,40 @@ namespace EasyConverter.DocumentBot
                 }
 
                 var fileName = job.FileId + "." + job.OriginalExtension;
+                var fullPath = Path.Combine(_workFolder, fileName);
 
-                var fullPath = await CopyFile(Path.Combine(_tusFolder, job.FileId), _workFolder, fileName);
+                using (var file = File.OpenWrite(fullPath))
+                {
+                    var storageFile = await _provider.GetObject(Shared.Constants.Buckets.Original, job.FileId);
+                    using (var stream = storageFile.Data)
+                    {
+                        await stream.CopyToAsync(file);
+                    }
+                }
 
-                var result = Converter.Convert(fullPath, job.DesiredExtension, _outputFolder);
+                var result = Converter.Convert(fullPath, job.DesiredExtension, _workFolder);
                 if (result.Successful)
                 {
-                    var resultPath = await CopyFile(result.OutputFile, _resultFolder);
+                    var resultPath = await CopyFile(result.OutputFile, _outputFolder);
                     var info = new FileInfo(resultPath);
+
+                    var contentType = GetContentType(info.Extension.Substring(1));
+
+                    using (var file = File.OpenRead(resultPath))
+                    {
+                        await _provider.UploadObject(file, Shared.Constants.Buckets.Result, job.FileId, contentType);
+                    }
 
                     var notifyJob = new NotifyUserJob
                     {
                         IsSuccessful = true,
-                        FileName = info.Name,
+                        FileId = job.FileId
                     };
 
                     _messageQueue.QueueJob(notifyJob);
 
                     _logger.LogInformation("Job '{JobName}' was processed successfuly. Took {milliseconds} ms.", job.Name, result.Time.TotalMilliseconds);
+                    return true;
                 }
                 else if (result.TimedOut)
                 {
@@ -106,7 +128,7 @@ namespace EasyConverter.DocumentBot
                 else
                 {
                     _logger.LogError("Job '{JobName}' failed. Reason: {Reason} Took {milliseconds} ms.", job.Name, result.Output, result.Time.TotalMilliseconds);
-                    
+
                     // TODO: Let user know when task fails
                 }
             }
@@ -114,6 +136,26 @@ namespace EasyConverter.DocumentBot
             {
                 _logger.LogError(ex, "Job 'JobName' failed because: {Message}.", job.Name, ex.Message);
             }
+
+            return false;
+        }
+
+        private string GetContentType(string extension)
+        {
+            return extension switch
+            {
+                "pdf" => "application/pdf",
+                "doc" => "application/msword",
+                "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "xls" => "application/vnd.ms-excel",
+                "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "ppt" => "application/vnd.ms-powerpoint",
+                "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "odt" => "application/vnd.oasis.opendocument.text",
+                "ods" => "application/vnd.oasis.opendocument.spreadsheet",
+                "odp" => "application/vnd.oasis.opendocument.presentation",
+                _ => throw new IndexOutOfRangeException(),
+            };
         }
 
         private async Task<string> CopyFile(string filePath, string destFolder, string destFileName = null)

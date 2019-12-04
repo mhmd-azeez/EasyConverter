@@ -19,7 +19,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bots", "Bots", "{EC17F9CC-B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasyConverter.DocumentBot", "EasyConverter.DocumentBot\EasyConverter.DocumentBot.csproj", "{B046B59D-8F0D-4037-A401-87D4C9764BF2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConverter.NotifyBot", "EasyConverter.NotifyBot\EasyConverter.NotifyBot.csproj", "{5E83DA5D-A92A-4ED4-BF6B-C72EC20DCA58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasyConverter.NotifyBot", "EasyConverter.NotifyBot\EasyConverter.NotifyBot.csproj", "{5E83DA5D-A92A-4ED4-BF6B-C72EC20DCA58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConverter.RouterBot", "EasyConverter.RouterBot\EasyConverter.RouterBot.csproj", "{82786E80-00D5-4C11-B953-9652784367EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{5E83DA5D-A92A-4ED4-BF6B-C72EC20DCA58}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E83DA5D-A92A-4ED4-BF6B-C72EC20DCA58}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E83DA5D-A92A-4ED4-BF6B-C72EC20DCA58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82786E80-00D5-4C11-B953-9652784367EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82786E80-00D5-4C11-B953-9652784367EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82786E80-00D5-4C11-B953-9652784367EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82786E80-00D5-4C11-B953-9652784367EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -62,6 +68,7 @@ Global
 		{2C88C047-B00B-4BCD-9CEC-AAD03023EC2F} = {E522DF4C-9AD9-4359-88D4-FAF1D2DAFB09}
 		{B046B59D-8F0D-4037-A401-87D4C9764BF2} = {EC17F9CC-B54C-43BB-A509-70B29D19199C}
 		{5E83DA5D-A92A-4ED4-BF6B-C72EC20DCA58} = {EC17F9CC-B54C-43BB-A509-70B29D19199C}
+		{82786E80-00D5-4C11-B953-9652784367EB} = {EC17F9CC-B54C-43BB-A509-70B29D19199C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1722CB90-AAC2-45F0-83F3-90A6C3E1BF1A}

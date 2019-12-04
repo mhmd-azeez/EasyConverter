@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using EasyConverter.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
@@ -62,33 +64,48 @@ namespace EasyConverter.WebUI
                 RequestPath = "/result",
             });
 
+            var minioStorageProvider = Shared.Storage.MinioStorageProviderFactory.Create();
+
             app.UseTus(context =>
             {
                 return new DefaultTusConfiguration
                 {
                     UrlPath = "/files",
-                    Store = new TusDiskStore(@"F:\converter\tus"),
+                    Store = new Stores.StorageProviderTusStore(minioStorageProvider, Shared.Constants.Buckets.Original),
                     Events = new Events
                     {
-                        OnFileCompleteAsync = async ctx =>
+                        OnFileCompleteAsync = ctx =>
                         {
-                            var file = await ctx.GetFileAsync();
-                            var metaData = await file.GetMetadataAsync(default);
-
-                            var fileName = metaData["name"].GetString(System.Text.Encoding.UTF8);
-                            var convertTo = metaData["convertTo"].GetString(System.Text.Encoding.UTF8);
-
                             var id = ctx.FileId;
 
-                            var job = new ConvertDocumentJob
+                            var job = new StartConversionJob
                             {
-                                FileId = ctx.FileId,
-                                DesiredExtension = convertTo,
-                                Name = $"Convert {file.Id} ({fileName}) to {convertTo}",
-                                OriginalExtension = fileName.Split('.').Last()
+                                FileId = ctx.FileId
                             };
 
                             messageQueue.QueueJob(job);
+
+                            return Task.CompletedTask;
+                        },
+                        OnBeforeCreateAsync = ctx =>
+                        {
+                            var sourceFileType = ctx.Metadata.ContainsKey("filetype") ?
+                                ctx.Metadata["filetype"].GetString(Encoding.UTF8) : null;
+
+                            if (IsValidOriginalType(sourceFileType) == false)
+                            {
+                                ctx.FailRequest($"Unsupported source filetype: '{sourceFileType}'");
+                            }
+
+                            var conversionTarget = ctx.Metadata.ContainsKey("convert-to") ?
+                                ctx.Metadata["convert-to"].GetString(Encoding.UTF8) : null;
+
+                            if (IsValidDestinationType(sourceFileType, conversionTarget) == false)
+                            {
+                                ctx.FailRequest($"Unsupported destination filetype: '{conversionTarget}' from '{sourceFileType}'.");
+                            }
+
+                            return Task.CompletedTask;
                         }
                     }
                 };
@@ -98,6 +115,30 @@ namespace EasyConverter.WebUI
             {
                 endpoints.MapRazorPages();
             });
+        }
+
+        private bool IsValidDestinationType(string sourceFileType, string conversionTarget)
+        {
+            return conversionTarget == "pdf";
+        }
+
+        private static bool IsValidOriginalType(string fileType)
+        {
+            var validSourceTypes = new string[]
+            {
+                 "application/pdf", // .pdf
+                 "application/msword", // .doc
+                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+                 "application/vnd.ms-excel", // .xls
+                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+                 "application/vnd.ms-powerpoint", // .ppt
+                 "application/vnd.openxmlformats-officedocument.presentationml.presentation", // pptx
+                 "application/vnd.oasis.opendocument.text", // .odt
+                 "application/vnd.oasis.opendocument.spreadsheet", // .ods
+                 "application/vnd.oasis.opendocument.presentation", // .odp
+            };
+
+            return validSourceTypes.Contains(fileType);
         }
     }
 }
