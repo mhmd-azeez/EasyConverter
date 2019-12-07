@@ -59,12 +59,6 @@ namespace EasyConverter.WebUI
             var mediator = services.GetService<IMediator>();
             var messageQueue = services.GetService<MessageQueueService>();
 
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(@"F:\converter\result"),
-                RequestPath = "/result",
-            });
-
             var minioStorageProvider = Shared.Storage.MinioStorageProviderFactory.Create();
 
             app.UseTus(context =>
