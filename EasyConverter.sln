@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasyConverter.DocumentBot",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasyConverter.NotifyBot", "EasyConverter.NotifyBot\EasyConverter.NotifyBot.csproj", "{5E83DA5D-A92A-4ED4-BF6B-C72EC20DCA58}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyConverter.RouterBot", "EasyConverter.RouterBot\EasyConverter.RouterBot.csproj", "{82786E80-00D5-4C11-B953-9652784367EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EasyConverter.RouterBot", "EasyConverter.RouterBot\EasyConverter.RouterBot.csproj", "{82786E80-00D5-4C11-B953-9652784367EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
