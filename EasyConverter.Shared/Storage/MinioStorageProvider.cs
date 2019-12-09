@@ -1,4 +1,5 @@
-﻿using Minio.DataModel;
+﻿using Microsoft.Extensions.Configuration;
+using Minio.DataModel;
 using Minio.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -171,7 +172,7 @@ namespace EasyConverter.Shared.Storage
 
     public static class MinioStorageProviderFactory
     {
-        public static MinioStorageProvider Create()
+        public static MinioStorageProvider Create(IConfiguration configuration)
         {
             var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY", EnvironmentVariableTarget.Machine);
             var secret = Environment.GetEnvironmentVariable("MINIO_SECRET", EnvironmentVariableTarget.Machine);

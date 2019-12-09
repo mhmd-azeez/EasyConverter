@@ -13,31 +13,20 @@ namespace EasyConverter.Shared
                 extension = extension.Substring(1);
             }
 
-            switch (extension)
+            return extension switch
             {
-                case "pdf":
-                    return "application/pdf";
-                case "html":
-                    return "text/html";
-
-                case "doc":
-                    return "application/msword";
-                case "docx":
-                    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
-                case "xls":
-                    return "application/vnd.ms-excel";
-                case "xlsx":
-                    return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-                case "ppt":
-                    return "application/vnd.ms-powerpoint";
-                case "pptx":
-                    return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-
-                default:
-                    return "application/octet-stream";
-            }
+                "pdf" => "application/pdf",
+                "doc" => "application/msword",
+                "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "xls" => "application/vnd.ms-excel",
+                "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "ppt" => "application/vnd.ms-powerpoint",
+                "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "odt" => "application/vnd.oasis.opendocument.text",
+                "ods" => "application/vnd.oasis.opendocument.spreadsheet",
+                "odp" => "application/vnd.oasis.opendocument.presentation",
+                _ => throw new IndexOutOfRangeException(),
+            };
         }
     }
 }

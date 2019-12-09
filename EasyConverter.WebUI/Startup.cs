@@ -46,10 +46,10 @@ namespace EasyConverter.WebUI
             {
                 app.UseExceptionHandler("/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+               // app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+           // app.UseHttpsRedirection();
             app.UseStaticFiles();
 
             app.UseRouting();
@@ -59,7 +59,7 @@ namespace EasyConverter.WebUI
             var mediator = services.GetService<IMediator>();
             var messageQueue = services.GetService<MessageQueueService>();
 
-            var minioStorageProvider = Shared.Storage.MinioStorageProviderFactory.Create();
+            var minioStorageProvider = Shared.Storage.MinioStorageProviderFactory.Create(Configuration);
 
             app.UseTus(context =>
             {

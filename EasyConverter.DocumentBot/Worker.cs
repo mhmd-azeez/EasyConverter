@@ -101,7 +101,7 @@ namespace EasyConverter.DocumentBot
                     var resultPath = await CopyFile(result.OutputFile, _outputFolder);
                     var info = new FileInfo(resultPath);
 
-                    var contentType = GetContentType(info.Extension.Substring(1));
+                    var contentType = Helpers.GetContentTypeFromExtension(info.Extension);
 
                     using (var file = File.OpenRead(resultPath))
                     {
@@ -138,24 +138,6 @@ namespace EasyConverter.DocumentBot
             }
 
             return false;
-        }
-
-        private string GetContentType(string extension)
-        {
-            return extension switch
-            {
-                "pdf" => "application/pdf",
-                "doc" => "application/msword",
-                "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "xls" => "application/vnd.ms-excel",
-                "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "ppt" => "application/vnd.ms-powerpoint",
-                "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "odt" => "application/vnd.oasis.opendocument.text",
-                "ods" => "application/vnd.oasis.opendocument.spreadsheet",
-                "odp" => "application/vnd.oasis.opendocument.presentation",
-                _ => throw new IndexOutOfRangeException(),
-            };
         }
 
         private async Task<string> CopyFile(string filePath, string destFolder, string destFileName = null)

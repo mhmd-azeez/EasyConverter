@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EasyConverter.Shared;
 using EasyConverter.Shared.Storage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -18,11 +19,13 @@ namespace EasyConverter.NotifyBot
     {
         private readonly ILogger<Worker> _logger;
         private readonly IStorageProvider _storageProvider;
+        private readonly IConfiguration _configuration;
 
-        public Worker(ILogger<Worker> logger, IStorageProvider provider)
+        public Worker(ILogger<Worker> logger, IStorageProvider provider, IConfiguration configuration)
         {
             _logger = logger;
             _storageProvider = provider;
+            _configuration = configuration;
             _logger.LogInformation("Notify Bot, Up and running...");
         }
 
@@ -74,13 +77,13 @@ namespace EasyConverter.NotifyBot
             var link = await _storageProvider.GetPresignedDownloadLink(
                 Shared.Constants.Buckets.Result, job.FileId, TimeSpan.FromHours(24));
 
-            var key = Environment.GetEnvironmentVariable("SENDGRID_API_KEY", EnvironmentVariableTarget.User);
+            var key = _configuration["SENDGRID_API_KEY"];
             var client = new SendGridClient(key);
 
             var message = new SendGridMessage();
             message.SetFrom(new EmailAddress("hello@easy-converter.com", "Easy Converter"));
             // TODO: Use actual email address
-            message.AddTo("example@example.com");
+            message.AddTo("muhammad-azeez@outlook.com");
             message.SetTemplateId("d-aad5b0e03ad94172804fbf77fb301d3b");
             message.SetTemplateData(new
             {

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using tusdotnet.Interfaces;
@@ -62,7 +63,7 @@ namespace EasyConverter.WebUI.Stores
         {
             var id = CreateFileId();
 
-            var parsedMetadata = tusdotnet.Models.Metadata.Parse(metadata);
+            var parsedMetadata = Metadata.Parse(metadata);
 
             var dictionary = new Dictionary<string, string>
             {
@@ -72,10 +73,18 @@ namespace EasyConverter.WebUI.Stores
 
             foreach (var pair in parsedMetadata)
             {
-                dictionary.Add(pair.Key, pair.Value.GetString(System.Text.Encoding.UTF8));
+                dictionary.Add(pair.Key, pair.Value.GetString(Encoding.UTF8));
             }
 
-            await _provider.UploadObject(Stream.Null, _bucketName, id, metadata: dictionary, token: cancellationToken);
+            var contentType = dictionary[Shared.Constants.Metadata.FileType];
+
+            await _provider.UploadObject(
+                data: Stream.Null,
+                bucketName: _bucketName,
+                objectName: id,
+                metadata: dictionary,
+                contentType: contentType,
+                token: cancellationToken);
 
             return id;
         }

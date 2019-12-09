@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EasyConverter.Shared;
 using EasyConverter.Shared.Storage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -22,7 +23,7 @@ namespace EasyConverter.RouterBot
                 {
                     services.AddHostedService<Worker>();
                     services.AddSingleton<MessageQueueService>();
-                    services.AddSingleton<IStorageProvider>(p => MinioStorageProviderFactory.Create());
+                    services.AddSingleton<IStorageProvider>(p => MinioStorageProviderFactory.Create(p.GetService<IConfiguration>()));
                 });
     }
 }
