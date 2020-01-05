@@ -1,0 +1,56 @@
+﻿@page
+@model EasyConverter.WebUI.Pages.UploadModel
+
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+
+@section Head {
+    <link rel="stylesheet" href="~/lib/dm-file-uploader/dist/css/jquery.dm-uploader.min.css" />
+}
+
+<form class="mb-3 dm-uploader" id="drag-and-drop-zone">
+    <div class="form-row">
+        <div class="col-md-12 col-sm-12">
+            <div class="from-group mb-2">
+                <label>File Uploader</label>
+                <input type="text" class="form-control" aria-describedby="fileHelp" placeholder="No file uploaded..." readonly="readonly" />
+                <div class="progress mb-2 d-none">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                         role="progressbar"
+                         style="width: 0%;"
+                         aria-valuenow="0" aria-valuemin="0" aria-valuemax="0">
+                        0%
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div role="button" class="btn btn-primary mr-2">
+                    <i class="fa fa-folder-o fa-fw"></i> Browse Files
+                    <input type="file" title='Click to add Files' />
+                </div>
+                <small class="status text-muted">Select a file or drag it over this area..</small>
+            </div>
+        </div>
+    </div>
+</form>
+
+
+
+
+@section Scripts {
+    <script src="~/lib/dm-file-uploader/dist/js/jquery.dm-uploader.min.js"></script>
+
+    <script>
+        $("#drag-and-drop-zone").dmUploader({
+            url: '@Url.Page("Upload")',
+            maxFileSize: 3000000,
+            auto: false,
+            extraData: {
+                __RequestVerificationToken: '@Xsrf.GetAndStoreTokens(this.HttpContext).RequestToken',
+                other: 'hello'
+            },
+            onInit: function () {
+                console.log('Callback: Plugin initialized');
+            }
+        });
+    </script>
+}

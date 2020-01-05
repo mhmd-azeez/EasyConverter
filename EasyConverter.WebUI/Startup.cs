@@ -1,19 +1,19 @@
 using System;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EasyConverter.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using tusdotnet;
-using tusdotnet.Models;
-using tusdotnet.Models.Configuration;
-using tusdotnet.Stores;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Hangfire;
+using Hangfire.PostgreSql;
+using EasyConverter.Shared.Storage;
+using EasyConverter.WebUI.Helpers;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 namespace EasyConverter.WebUI
 {
@@ -29,15 +29,40 @@ namespace EasyConverter.WebUI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHangfire(configuration => configuration
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(Configuration.GetConnectionString("HangfireConnection"))
+                );
+
+            services.AddHangfireServer();
+
             services.AddMediatR(typeof(Startup).Assembly);
             services.AddSingleton<MessageQueueService>();
             services.AddRazorPages()
-                    .AddRazorRuntimeCompilation();
+                    .AddRazorRuntimeCompilation()
+                    .AddRazorPagesOptions(options =>
+                    {
+                        options.Conventions.Add(new PageRouteTransformerConvention(new SlugifyParameterTransformer()));
+                    });
+
+            services.AddRouting(options =>
+            {
+                options.LowercaseUrls = true;
+                options.ConstraintMap["slugify"] = typeof(SlugifyParameterTransformer);
+            });
+
+            services.AddSingleton<IStorageProvider, MinioStorageProvider>(
+                (provider) => MinioStorageProviderFactory.Create(provider.GetService<IConfiguration>()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IServiceProvider services)
         {
+            var logger = services.GetService<ILogger<Startup>>();
+            logger.LogInformation("Hello World! Current Date is {CurrentDate}", DateTime.UtcNow);
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -52,59 +77,13 @@ namespace EasyConverter.WebUI
            // app.UseHttpsRedirection();
             app.UseStaticFiles();
 
+            app.UseSerilogRequestLogging();
+
+            app.UseHangfireDashboard();
+
             app.UseRouting();
 
             app.UseAuthorization();
-
-            var mediator = services.GetService<IMediator>();
-            var messageQueue = services.GetService<MessageQueueService>();
-
-            var minioStorageProvider = Shared.Storage.MinioStorageProviderFactory.Create(Configuration);
-
-            app.UseTus(context =>
-            {
-                return new DefaultTusConfiguration
-                {
-                    UrlPath = "/files",
-                    Store = new Stores.StorageProviderTusStore(minioStorageProvider, Shared.Constants.Buckets.Original),
-                    Events = new Events
-                    {
-                        OnFileCompleteAsync = ctx =>
-                        {
-                            var id = ctx.FileId;
-
-                            var job = new StartConversionJob
-                            {
-                                FileId = ctx.FileId
-                            };
-
-                            messageQueue.QueueJob(job);
-
-                            return Task.CompletedTask;
-                        },
-                        OnBeforeCreateAsync = ctx =>
-                        {
-                            var sourceFileType = ctx.Metadata.ContainsKey("filetype") ?
-                                ctx.Metadata["filetype"].GetString(Encoding.UTF8) : null;
-
-                            if (IsValidOriginalType(sourceFileType) == false)
-                            {
-                                ctx.FailRequest($"Unsupported source filetype: '{sourceFileType}'");
-                            }
-
-                            var conversionTarget = ctx.Metadata.ContainsKey("convert-to") ?
-                                ctx.Metadata["convert-to"].GetString(Encoding.UTF8) : null;
-
-                            if (IsValidDestinationType(sourceFileType, conversionTarget) == false)
-                            {
-                                ctx.FailRequest($"Unsupported destination filetype: '{conversionTarget}' from '{sourceFileType}'.");
-                            }
-
-                            return Task.CompletedTask;
-                        }
-                    }
-                };
-            });
 
             app.UseEndpoints(endpoints =>
             {

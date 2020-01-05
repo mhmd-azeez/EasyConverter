@@ -1,194 +1,48 @@
 ﻿@page
 @model IndexModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
 @{
     ViewData["Title"] = "Home page";
 }
 
-@section Head {
-    <link href="https://transloadit.edgly.net/releases/uppy/v1.6.0/uppy.min.css" rel="stylesheet">
-}
-
-
 <div>
     <h2>To convert a document, please upload it below:</h2>
-    <div class="form-group" id="upload-area">
-        <label> Select the document that you want to upload: </label>
-        <div id="drag-drop-area"></div>
-    </div>
 
-    <div class="card" id="file-info">
-        <div class="card-body">
-            <h5 class="card-title" id="file-name">Document.docx</h5>
-            <p id="file-size">5 MB</p>
-            <a id="remove-file-button" href="#" class="btn btn-danger">Remove</a>
+    <form method="post" asp-page="Index" enctype="multipart/form-data">
+
+        @if (Model.Message != null)
+        {
+        <div class="alert alert-danger" role="alert">@Model.Message</div>
+        }
+
+        <div asp-validation-summary="ModelOnly">
+            <span>Please correct the following errors</span>
         </div>
-    </div>
 
-    <div class="form-group">
-        <label for="targetType">Convert the document to:</label>
-        <select class="form-control" id="target-type">
-            <option value="pdf">PDF</option>
-            <option value="docx">Word (2007+)</option>
-            <option value="html">HTML</option>
-        </select>
-    </div>
+        <div class="form-group">
+            <label asp-for="UploadedFile">Upload a document here:</label>
+            <br />
+            <input asp-for="UploadedFile" />
+            <br />
+            <span asp-validation-for="UploadedFile" class="text-danger"></span>
+        </div>
 
-    <div class="form-group">
-        <label for="email-input">Email address</label>
-        <input type="email" oninput="updateState" class="form-control" id="email-input" aria-describedby="email-help" placeholder="Enter email so that we can notify you when the conversion is complete">
-        <small id="email-help" class="form-text text-muted">We'll never share your email with anyone else.</small>
-    </div>
+        <div class="form-group">
+            <label asp-for="TargetType">Convert the document to:</label>
+            <select class="form-control" asp-for="TargetType">
+                <option value="pdf">PDF</option>
+                <option value="docx">Word (2007+)</option>
+                <option value="html">HTML</option>
+            </select>
+            <span asp-validation-for="TargetType" class="text-danger"></span>
+        </div>
 
-    <div id="progress-bar-area" class="mb-1"></div>
-    <button class="btn btn-primary" id="upload-button">Upload</button>
+        <div class="form-group">
+            <label asp-for="EmailAddress">Email address</label>
+            <input type="email" class="form-control" asp-for="EmailAddress" aria-describedby="email-help" placeholder="Enter email so that we can notify you when the conversion is complete">
+            <span asp-validation-for="EmailAddress" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="upload-button">Upload</button>
+    </form>
 </div>
-
-@section Scripts
-{
-    <script src="https://transloadit.edgly.net/releases/uppy/v1.6.0/uppy.min.js"></script>
-    <script>
-        const setFilesMetaData = (files) => {
-
-            let keys = Object.keys(files);
-
-            keys.forEach((key) => {
-                let file = files[key];
-                file.meta["convert-to"] = "pdf";
-            });
-
-            console.log(files);
-        };
-
-        var uppy = Uppy.Core(
-            {
-                debug: true,
-                autoProceed: false,
-                onBeforeUpload: setFilesMetaData,
-                restrictions: {
-                    maxFileSize: 1024 * 1024 * 5,
-                    maxNumberOfFiles: 1,
-                    minNumberOfFiles: 1,
-                    allowedFileTypes: [
-                        'application/pdf', // .pdf
-                        'application/msword', // .doc
-                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-                        'application/vnd.ms-excel', // .xls
-                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-                        'application/vnd.ms-powerpoint', // .ppt
-                        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx
-                        'application/vnd.oasis.opendocument.text', // .odt
-                        'application/vnd.oasis.opendocument.spreadsheet', // .ods
-                        'application/vnd.oasis.opendocument.presentation' // .odp
-                    ]
-                },
-            })
-            .use(Uppy.DragDrop, { target: '#drag-drop-area' })
-            .use(Uppy.Tus, { endpoint: '/files/' })
-            .use(Uppy.ProgressBar, { target: '#progress-bar-area', hideAfterFinish: false });
-
-        const uploadBtn = document.getElementById('upload-button');
-        const select = document.getElementById('target-type');
-        uploadBtn.addEventListener('click', (e) => {
-            if (uppy.getFiles().length == 0)
-                return;
-
-            let selectedOption = select.options[select.selectedIndex].value;
-            uppy.setMeta({ 'convert-to': selectedOption });
-            uppy.upload().then((result) => {
-                console.info('Successful uploads:', result.successful);
-
-                if (result.failed.length > 0) {
-                    console.error('Errors:');
-                    result.failed.forEach((file) => {
-                        console.error(file.error);
-                    })
-                }
-                else {
-                    window.location.href = '@Url.PageLink("Info")';
-                }
-            });
-        });
-
-        uppy.on('file-added', updateState);
-        uppy.on('file-removed', updateState);
-
-        uppy.on('upload', () => {
-            window.isUploading = true;
-            updateState();
-        });
-
-        uppy.on('complete', () => {
-            window.isUploading = false;
-            updateState();
-        });
-
-        uppy.on('upload')
-
-        const emailInput = document.getElementById('email-input');
-        emailInput.addEventListener('input', () => updateState());
-
-        const uploadArea = document.getElementById('upload-area');
-        const fileInfo = document.getElementById('file-info');
-        const fileSize = document.getElementById('file-size');
-        const fileName = document.getElementById('file-name');
-        const removeFileButton = document.getElementById('remove-file-button');
-
-        removeFileButton.addEventListener('click', () => {
-            uppy.getFiles().forEach(f => {
-                uppy.removeFile(f.id);
-            });
-        });
-
-        // Vue doesnt work well with uppy :(
-        //const app = new Vue({
-        //    el: "#app",
-        //    computed: {
-        //        cantUpload: () => {
-        //            return validateEmail(emailInput.value) == false ||
-        //                uppy.getFiles().length == 0;
-        //        }
-        //    },
-        //    data: {
-        //        message: "Select the document that you want to upload:"
-        //    }
-        //});
-
-        function validateEmail(email) {
-            var re = /^(([^<>()\[\]\\.,;:\s@@"]+(\.[^<>()\[\]\\.,;:\s@@"]+)*)|(".+"))@@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-            return re.test(String(email).toLowerCase());
-        }
-
-        function updateState() {
-            uploadBtn.disabled = validateEmail(emailInput.value) == false ||
-                uppy.getFiles().length == 0 ||
-                window.isUploading == true;
-
-            if (uppy.getFiles().length == 0) {
-                uploadArea.style.display = "block";
-                fileInfo.style.display = "none";
-            }
-            else {
-                uploadArea.style.display = "none";
-                fileInfo.style.display = "block";
-
-                let first = uppy.getFiles()[0];
-
-                fileSize.innerHTML = humanFileSize(first.size);
-                fileName.innerHTML = first.data.name;
-            }
-        }
-
-        // https://stackoverflow.com/a/56806357/7003797
-        function humanFileSize(size) {
-            if (size < 1024) return size + ' B'
-            let i = Math.floor(Math.log(size) / Math.log(1024))
-            let num = (size / Math.pow(1024, i))
-            let round = Math.round(num)
-            num = round < 10 ? num.toFixed(2) : round < 100 ? num.toFixed(1) : round
-            return `${num} ${'KMGTPEZY'[i - 1]}B`
-        }
-
-        updateState();
-    </script>
-
-}

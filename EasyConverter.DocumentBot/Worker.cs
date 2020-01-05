@@ -101,7 +101,7 @@ namespace EasyConverter.DocumentBot
                     var resultPath = await CopyFile(result.OutputFile, _outputFolder);
                     var info = new FileInfo(resultPath);
 
-                    var contentType = Helpers.GetContentTypeFromExtension(info.Extension);
+                    var contentType = KitchenSink.GetContentTypeFromExtension(info.Extension);
 
                     using (var file = File.OpenRead(resultPath))
                     {

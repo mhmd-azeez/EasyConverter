@@ -4,7 +4,7 @@ using System.Text;
 
 namespace EasyConverter.Shared
 {
-    public class Helpers
+    public class KitchenSink
     {
         public static string GetContentTypeFromExtension(string extension)
         {

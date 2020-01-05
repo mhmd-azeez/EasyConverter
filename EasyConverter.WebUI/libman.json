@@ -12,6 +12,15 @@
         "dist/tus.min.js",
         "dist/tus.min.js.map"
       ]
+    },
+    {
+      "provider": "jsdelivr",
+      "library": "dm-file-uploader@1.0.2",
+      "destination": "wwwroot/lib/dm-file-uploader/",
+      "files": [
+        "dist/css/jquery.dm-uploader.min.css",
+        "dist/js/jquery.dm-uploader.min.js"
+      ]
     }
   ]
 }

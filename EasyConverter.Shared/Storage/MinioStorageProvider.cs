@@ -27,6 +27,9 @@ namespace EasyConverter.Shared.Storage
 
         public MinioStorageProvider(string endpoint, string accessKey, string secret)
         {
+            if (string.IsNullOrWhiteSpace(endpoint))
+                throw new ArgumentNullException(nameof(endpoint));
+
             _client = new Minio.MinioClient(endpoint, accessKey, secret);
         }
 
@@ -174,9 +177,9 @@ namespace EasyConverter.Shared.Storage
     {
         public static MinioStorageProvider Create(IConfiguration configuration)
         {
-            var accessKey = Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY", EnvironmentVariableTarget.Machine);
-            var secret = Environment.GetEnvironmentVariable("MINIO_SECRET", EnvironmentVariableTarget.Machine);
-            var endpoint = Environment.GetEnvironmentVariable("MINIO_ENDPOINT", EnvironmentVariableTarget.Machine);
+            var accessKey = configuration["Minio:AccessKey"];
+            var secret = configuration["Minio:Secret"];
+            var endpoint = configuration["Minio:Endpoint"];
 
             return new MinioStorageProvider(endpoint, accessKey, secret);
         }

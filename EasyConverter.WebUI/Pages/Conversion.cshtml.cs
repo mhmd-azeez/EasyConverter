@@ -9,7 +9,7 @@ namespace EasyConverter.WebUI.Pages
 {
     public class InfoModel : PageModel
     {
-        public void OnGet()
+        public void OnGet(string id)
         {
         }
     }
