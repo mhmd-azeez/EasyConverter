@@ -38,15 +38,15 @@ namespace EasyConverter.WebUI.Jobs
             EnsureFolderExists(_workPath);
             EnsureFolderExists(_outputPath);
 
-            var storageObject = await _provider.GetObjectMetadata(
+            var shallowStorageObject = await _provider.GetObjectMetadata(
                     Shared.Constants.Buckets.Original,
                     fileId);
 
-            if (storageObject.Metadata.ContainsKey(Shared.Constants.Metadata.FileType) &&
-                storageObject.Metadata.ContainsKey(Shared.Constants.Metadata.ConvertTo))
+            if (shallowStorageObject.Metadata.ContainsKey(Shared.Constants.Metadata.FileType) &&
+                shallowStorageObject.Metadata.ContainsKey(Shared.Constants.Metadata.ConvertTo))
             {
-                var extension = storageObject.Metadata[Shared.Constants.Metadata.FileType];
-                var convertTo = storageObject.Metadata[Shared.Constants.Metadata.ConvertTo];
+                var extension = shallowStorageObject.Metadata[Shared.Constants.Metadata.FileType];
+                var convertTo = shallowStorageObject.Metadata[Shared.Constants.Metadata.ConvertTo];
 
                 var fileName = fileId + "." + extension;
                 var fullPath = Path.Combine(_workPath, fileName);
@@ -70,7 +70,12 @@ namespace EasyConverter.WebUI.Jobs
 
                     using (var file = File.OpenRead(resultPath))
                     {
-                        await _provider.UploadObject(file, Shared.Constants.Buckets.Result, fileId, contentType);
+                        await _provider.UploadObject(
+                            file,
+                            Shared.Constants.Buckets.Result,
+                            fileId,
+                            contentType,
+                            shallowStorageObject.Metadata);
                     }
 
                     // TODO: Notify user document has been completed and is ready for downloading

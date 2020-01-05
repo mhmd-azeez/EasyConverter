@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 
 namespace EasyConverter.WebUI.Jobs
@@ -24,17 +25,27 @@ namespace EasyConverter.WebUI.Jobs
             _sendGridKey = configuration["SendGrid:ApiKey"];
         }
 
+        [DisplayName("Notify user that File ({0}) has been completed.")]
         public async Task Run(string fileId)
         {
             var link = await _provider.GetPresignedDownloadLink(
                Shared.Constants.Buckets.Result, fileId, TimeSpan.FromHours(24));
 
+            var metadata = await _provider.GetObjectMetadata(
+                Shared.Constants.Buckets.Result, fileId);
+
+            var emailAddress = metadata.Metadata[Shared.Constants.Metadata.EmailAddress];
+            if (string.IsNullOrWhiteSpace(emailAddress))
+            {
+                // TODO: Decide what to do!
+                throw new JobFailedException("Email address can't be empty!");
+            }
+
             var client = new SendGridClient(_sendGridKey);
 
             var message = new SendGridMessage();
             message.SetFrom(new EmailAddress("no-reply@easy-converter.com", "Easy Converter"));
-            // TODO: Use actual email address
-            message.AddTo("muhammad-azeez@outlook.com");
+            message.AddTo(emailAddress);
             message.SetTemplateId("d-aad5b0e03ad94172804fbf77fb301d3b");
             message.SetTemplateData(new
             {
